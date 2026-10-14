@@ -66,7 +66,15 @@ export class Tweens {
       }
       it.t += dt;
       const k = Math.min(1, it.t / it.dur);
-      it.update(it.ease(k));
+      try {
+        it.update(it.ease(k));
+      } catch (e) {
+        // one broken animation (e.g. its object was removed mid-way) must not stall all the others
+        console.error(e);
+        it.done = true;
+        it.resolve();
+        continue;
+      }
       if (k >= 1) {
         it.done = true;
         it.resolve();

@@ -57,7 +57,7 @@ describe('single-file packer', () => {
   it('inlines script, styles, fonts and icon', () => {
     const html = pack(dist(), { banner: 'Licences — © someone' });
     expect(html).not.toMatch(/\.\/assets\//);
-    expect(html).toContain(`url(data:font/woff2;base64,${FONT.toString('base64')})`);
+    expect(html).toContain(`url("data:font/woff2;base64,${FONT.toString('base64')}")`);
     expect(html).not.toContain('woff)'); // fallback dropped
     expect(html).toContain('url(#g)');
     expect(html).toMatch(/<link rel="icon" type="image\/svg\+xml" href="data:image\/svg\+xml;base64,/);
@@ -97,6 +97,62 @@ describe('single-file packer', () => {
     ['an image still pointing at a file', { 'index.html': '<!doctype html><html><head><meta charset="utf-8"></head><body><img src="./favicon.svg"></body></html>', 'assets/index-abc.js': null, 'assets/index-abc.css': null, 'assets/f-1.woff2': null, 'assets/f-1.woff': null }, /still points at/],
     ['a missing referenced file', { 'favicon.svg': null }, /missing file/],
     ['no </body>', { 'index.html': '<!doctype html><html><head><meta charset="utf-8"></head>' }, /<\/body>/],
+  ])('refuses %s', (_name, over, err) => {
+    expect(() => pack(dist(over))).toThrow(err);
+  });
+
+  it('keeps quoted data: URIs with parentheses, SVG fragments and stylesheet media', () => {
+    const svg = `url("data:image/svg+xml,%3Csvg transform='rotate(45)'%3E%3C/svg%3E")`;
+    const html = pack(
+      dist({
+        'index.html': `<!doctype html><html><head><meta charset="utf-8"><script type="module" src="./assets/index-abc.js"></script><link rel="stylesheet" href="./assets/index-abc.css" media="screen and (min-width: 1px)"><link rel="stylesheet" href="./assets/print.css" media="print"></head><body></body></html>`,
+        'assets/index-abc.css': `a{background:${svg}}b{mask:url(./sprite.svg#star)}`,
+        'assets/sprite.svg': '<svg/>',
+        'assets/print.css': 'body{display:none}',
+        'assets/f-1.woff2': null,
+        'assets/f-1.woff': null,
+        'favicon.svg': null,
+      }),
+    );
+    expect(html).toContain(svg);
+    expect(html).toMatch(/url\("data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+#star"\)/);
+    expect(html).toContain('<style media="print">body{display:none}</style>');
+    expect(html).toContain('<style media="screen and (min-width: 1px)">');
+  });
+
+  it('declares the charset first even when the source has none', () => {
+    const html = pack(dist({ 'index.html': '<!doctype html><html><head><title>t</title><script type="module" src="./assets/index-abc.js"></script><link rel="stylesheet" href="./assets/index-abc.css"></head><body></body></html>', 'favicon.svg': null }));
+    expect(html).toMatch(/<head>\n    <meta charset="UTF-8" \/>/);
+    expect(html.match(/charset/g)).toHaveLength(1);
+  });
+
+  it('injects the game before the real </body>, not one inside a classic script', () => {
+    const html = pack(dist({ 'index.html': '<!doctype html><html><head><meta charset="utf-8"><script type="module" src="./assets/index-abc.js"></script><link rel="stylesheet" href="./assets/index-abc.css"><link rel="icon" href="./favicon.svg"></head><body><script>var s = "</body>";</script></body></html>' }));
+    expect(html.indexOf('var s = "</body>"')).toBeLessThan(html.indexOf('<script type="module">'));
+    expect(html.trimEnd().endsWith('</body></html>')).toBe(true);
+  });
+
+  it('drops hint/PWA links and ignores sourcemaps, dotfiles and look-alike names', () => {
+    const html = pack(
+      dist({
+        'index.html': `<!doctype html><html><head><meta charset="utf-8"><link rel="manifest" href="./site.webmanifest"><link rel="preload" as="font" href="./assets/f-1.woff2"><script type="module" src="./assets/index-abc.js"></script><link rel="stylesheet" href="./assets/index-abc.css"><link rel="icon" href="./favicon.svg"></head><body></body></html>`,
+        'site.webmanifest': '{}',
+        'assets/index-abc.js': 'const t = "Customs: the import (smuggled spices) came from \\"/dev/lab\\" via button.png";',
+        'assets/index-abc.js.map': '{}',
+        'assets/.DS_Store': 'x',
+        'on.png': 'png',
+      }),
+    );
+    expect(html).not.toContain('manifest');
+    expect(html).not.toContain('rel="preload"');
+  });
+
+  it.each([
+    ['a remote ES import', { 'assets/index-abc.js': 'import{a}from"https://cdn.example/x.js";a()' }, /internet/],
+    ['an import map', { 'index.html': '<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{}</script></head><body></body></html>' }, /import map/],
+    ['an image-set() string', { 'assets/index-abc.css': 'a{background:image-set("./bg.png" 1x)}', 'assets/bg.png': 'png' }, /still references/],
+    ['an alternate stylesheet', { 'index.html': '<!doctype html><html><head><meta charset="utf-8"><link rel="alternate stylesheet" href="./assets/index-abc.css"></head><body></body></html>' }, /alternate/],
+    ['a <use> pointing at a sprite file', { 'index.html': '<!doctype html><html><head><meta charset="utf-8"><script type="module" src="./assets/index-abc.js"></script><link rel="stylesheet" href="./assets/index-abc.css"><link rel="icon" href="./favicon.svg"></head><body><svg><use href="./favicon.svg#x"></use></svg></body></html>' }, /still points at/],
   ])('refuses %s', (_name, over, err) => {
     expect(() => pack(dist(over))).toThrow(err);
   });

@@ -623,11 +623,13 @@ button {
   animation: fadeIn 0.2s;
 }
 .modal-box {
+  --pad-x: 20px;
+  --pad-b: 22px;
   position: relative;
   width: min(560px, 100%);
   max-height: calc(100% - 20px);
   overflow-y: auto;
-  padding: 20px 20px 22px;
+  padding: 20px var(--pad-x) var(--pad-b);
   animation: popIn 0.35s ease-out;
 }
 .modal-box.wide {
@@ -2149,6 +2151,8 @@ body.portrait .level-grid {
     font-size: 22px;
   }
   .modal-box {
+    --pad-x: 14px;
+    --pad-b: 14px;
     padding: 14px;
   }
   .star-slot svg {
@@ -2547,10 +2551,10 @@ body.portrait .mg {
 @media (max-height: 520px) {
   .modal-box > .modal-actions:last-child {
     position: sticky;
-    bottom: -22px;
+    bottom: calc(-1 * var(--pad-b));
     z-index: 1;
-    margin: 12px -20px -22px;
-    padding: 10px 20px 12px;
+    margin: 12px calc(-1 * var(--pad-x)) calc(-1 * var(--pad-b));
+    padding: 10px var(--pad-x) 12px;
     background: var(--paper);
     border-radius: 0 0 19px 19px;
     box-shadow: 0 -10px 12px -10px rgba(34, 34, 59, 0.35);
@@ -2579,5 +2583,79 @@ body.portrait .mg {
 @media (max-height: 760px) {
   body.portrait .items {
     flex-direction: row;
+  }
+}
+
+/* the title scrolls as a last resort on very small screens */
+.title-screen {
+  overflow-y: auto;
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .title-screen {
+    align-items: safe center;
+  }
+  /* item buttons start below the request chip */
+  .items {
+    top: calc(var(--top-h) + 62px);
+    bottom: auto;
+  }
+}
+@media (max-height: 340px) and (orientation: landscape) {
+  .title-screen .title-buttons {
+    gap: 6px;
+  }
+  .title-screen .btn.big {
+    min-height: 44px;
+    font-size: 20px;
+  }
+  .title-screen .btn:not(.big):not(.icon) {
+    min-height: 40px;
+    padding: 6px 14px;
+  }
+  .title-screen .btn.icon {
+    width: 40px;
+    height: 40px;
+  }
+  .title-foot {
+    display: none;
+  }
+}
+/* small portrait screens (e.g. 320x480) */
+@media (max-height: 560px) and (orientation: portrait) {
+  .title-screen .logo {
+    margin-top: 0;
+  }
+  .title-screen .logo-main {
+    font-size: clamp(36px, 11vw, 56px);
+  }
+  .title-screen .title-buttons {
+    gap: 10px;
+  }
+  .title-screen .btn.big {
+    min-height: 50px;
+    font-size: 22px;
+    padding: 8px 28px;
+  }
+}
+/* narrow phones: a compact case counter instead of none (Rush Hour shows the score there) */
+@media (max-width: 360px) {
+  body.portrait .case-count {
+    display: inline-flex;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  body.portrait .timer .t-ico,
+  body.portrait .case-count .cc-word {
+    display: none;
+  }
+}
+@media (max-width: 330px) {
+  body.portrait .hud-top .pill {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+  body.portrait .hud-top .pill svg {
+    width: 16px;
+    height: 16px;
   }
 }

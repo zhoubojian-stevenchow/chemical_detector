@@ -46,6 +46,7 @@ export class Hud {
   private cb: HudCallbacks;
   private dialogEl: HTMLElement | null = null;
   private dialogCancel: (() => void) | null = null;
+  private paused = false;
   private readingTimer = 0;
   private bubbleEl: HTMLElement | null = null;
   private bubbleTimer = 0;
@@ -134,7 +135,7 @@ export class Hud {
   }
 
   setCaseCount(i: number, n: number | null): void {
-    $(this.root, '.case-count').textContent = n === null ? `Case ${i}` : `Case ${i}/${n}`;
+    $(this.root, '.case-count').innerHTML = `<span class="cc-word">Case </span>${i}${n === null ? '' : `/${n}`}`;
   }
 
   coinsPillPos(): { x: number; y: number } {
@@ -161,6 +162,10 @@ export class Hud {
       };
       const step = () => {
         if (done || !el.isConnected) return;
+        if (this.paused) {
+          setTimeout(step, 150); // hold the typing (and the babble) while the game is paused
+          return;
+        }
         i += 2;
         txt.textContent = text.slice(0, i);
         if (speak && i % 4 === 0 && /[a-z]/i.test(text[i] ?? '')) audio.babble(client.voice.pitch, client.voice.wave, 1);
@@ -197,6 +202,10 @@ export class Hud {
       window.addEventListener('keydown', onKey);
       this.dialogCancel = close;
     });
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
   }
 
   /** Remove the dialog (if any) and release whoever is awaiting it. */

@@ -30,6 +30,10 @@ export class App implements Host {
   private pendingChapter: number | null = null;
   private dailyPrompted = false;
   private inShift = false;
+  /** the running shift, so navigating away can end it cleanly */
+  private ctrl: ShiftController | null = null;
+  /** promotion not shown yet (shown on the results card, else on the next map visit) */
+  private pendingRank: number | null = null;
 
   constructor(layer: HTMLElement, lab: LabScene) {
     this.layer = layer;
@@ -112,7 +116,30 @@ export class App implements Host {
 
   // ───────────────────────── navigation ─────────────────────────
 
+  /** End a running shift because the app is navigating somewhere else. */
+  private abortShift(): void {
+    const c = this.ctrl;
+    if (!c) return;
+    this.ctrl = null;
+    c.abort();
+    this.inShift = false;
+    this.updateInsets();
+  }
+
+  /** No shift running and no other modal on screen → safe to pop a delayed modal. */
+  private calmMoment(): boolean {
+    return !this.inShift && !this.layer.querySelector('.modal');
+  }
+
+  private showPendingRank(): void {
+    const r = this.pendingRank;
+    if (r === null || this.inShift) return;
+    this.pendingRank = null;
+    void rankUpModal(this, r, () => this.showSkills());
+  }
+
   showTitle(): void {
+    this.abortShift();
     this.returnTo = 'title';
     this.inShift = false;
     this.updateInsets();
@@ -137,6 +164,7 @@ export class App implements Host {
 
   /** @param quiet don't pop the daily-bonus prompt (another modal is about to open) */
   showMap(chapter?: number, quiet = false): void {
+    this.abortShift();
     this.returnTo = 'map';
     this.inShift = false;
     this.updateInsets();
@@ -156,9 +184,14 @@ export class App implements Host {
       this.pendingChapter = null;
       void chapterUnlockedModal(this, ch).then(() => mapScreen(this, ch));
       this.chapter = ch;
+    } else if (!quiet && this.pendingRank !== null) {
+      setTimeout(() => this.calmMoment() && this.showPendingRank(), 500);
     } else if (!quiet && !this.dailyPrompted && this.dailyAvailable() && this.progress.highestCleared() >= 1) {
-      this.dailyPrompted = true;
-      setTimeout(() => this.openDaily(), 500);
+      setTimeout(() => {
+        if (!this.calmMoment()) return; // e.g. a level intro opened meanwhile: ask on a later visit
+        this.dailyPrompted = true;
+        this.openDaily();
+      }, 500);
     }
   }
 
@@ -168,6 +201,7 @@ export class App implements Host {
   }
 
   showShop(tab?: string): void {
+    this.abortShift();
     shopScreen(this, tab, () => {
       this.applySettings();
       this.checkAchievements();
@@ -176,14 +210,17 @@ export class App implements Host {
   }
 
   showSkills(): void {
+    this.abortShift();
     skillsScreen(this, () => this.back());
   }
 
   showDex(): void {
+    this.abortShift();
     dexScreen(this, () => this.back());
   }
 
   showAchievements(): void {
+    this.abortShift();
     this.checkAchievements();
     achievementsScreen(this, () => this.back());
   }
@@ -238,6 +275,7 @@ export class App implements Host {
   }
 
   resetProgress(): void {
+    this.abortShift(); // reset can be reached from the pause menu's settings
     save.reset();
     this.applySettings();
     toast(this.layer, 'Progress erased. Fresh lab coat!');
@@ -290,12 +328,16 @@ export class App implements Host {
   private async playShift(mode: Mode, levelId: number): Promise<void> {
     const origin = this.returnTo; // where Rush Hour / Daily Case were started from
     while (true) {
+      this.abortShift(); // never two shifts at once
       clearLayer(this);
       this.inShift = true;
       this.updateInsets();
       const shift = this.makeShift(mode, levelId);
       const ctrl = new ShiftController(this, shift);
+      this.ctrl = ctrl;
       const exit = await ctrl.run();
+      if (this.ctrl === ctrl) this.ctrl = null;
+      if (exit.kind === 'abort') return; // whoever ended it has already moved on
       this.inShift = false;
       this.updateInsets();
       this.lab.removeClient();
@@ -357,6 +399,7 @@ export class App implements Host {
       void this.lab.focus('map', 1.0);
       audio.playMusic('menu');
       const total = r.totalCoins + dailyBonus;
+      let rankTimer = 0;
       const action = await new Promise<'next' | 'retry' | 'map'>((resolve) => {
         resultsModal(
           this,
@@ -386,8 +429,12 @@ export class App implements Host {
           },
         );
         const rankAfter = rankFromXp(d.xp);
-        if (rankAfter > rankBefore) setTimeout(() => void rankUpModal(this, rankAfter, () => this.showSkills()), 2600);
+        if (rankAfter > rankBefore) {
+          this.pendingRank = rankAfter;
+          rankTimer = window.setTimeout(() => this.showPendingRank(), 2600); // after the count-up
+        }
       });
+      window.clearTimeout(rankTimer); // left the results early: promotion waits for the map
       await this.maybeInterstitial(levelId);
       if (action === 'retry') continue;
       if (action === 'next' && mode === 'campaign' && hasNext) {

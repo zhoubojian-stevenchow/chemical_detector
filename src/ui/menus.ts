@@ -10,7 +10,7 @@ import { TOOLS } from '../data/tools';
 import { GAME } from '../config';
 import type { Progress } from '../game/progress';
 import { parFraction, type ShiftResult } from '../game/shift';
-import { $, avatarHtml, countUp, esc, h, modal, onAct } from './dom';
+import { $, avatarHtml, countUp, esc, h, modal, onAct, toast } from './dom';
 import { icon, toolIcon } from './icons';
 
 export interface Host {
@@ -116,10 +116,7 @@ function titleHtml(): string {
 }
 
 function lockedToast(host: Host, text: string): void {
-  host.layer.querySelector('.toast')?.remove();
-  const t = h(`<div class="toast">${esc(text)}</div>`);
-  host.layer.appendChild(t);
-  setTimeout(() => t.remove(), 1800);
+  toast(host.layer, text);
 }
 
 // ───────────────────────── map ─────────────────────────

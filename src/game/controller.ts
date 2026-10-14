@@ -16,7 +16,13 @@ import type { App } from './app';
 import { describe, matches, referenceValue, type Reading } from './deduction';
 import type { Accident, Quality, Shift, ShiftResult } from './shift';
 
-export type ShiftExit = { kind: 'done'; result: ShiftResult; newDex: number } | { kind: 'quit' } | { kind: 'restart' } | { kind: 'failed'; result: ShiftResult; newDex: number };
+export type ShiftExit =
+  | { kind: 'done'; result: ShiftResult; newDex: number }
+  | { kind: 'quit' }
+  | { kind: 'restart' }
+  | { kind: 'failed'; result: ShiftResult; newDex: number }
+  /** torn down from outside (the app navigated away); the caller must not navigate again */
+  | { kind: 'abort' };
 
 interface Machine {
   end: number;
@@ -36,6 +42,7 @@ export class ShiftController {
   private last = 0;
   private machines = new Map<ToolId, Machine>();
   private exit: ShiftExit | null = null;
+  private cleaned = false;
   private analysisDone: (() => void) | null = null;
   private failing = false;
   private reviveUsed = false;
@@ -126,7 +133,27 @@ export class ShiftController {
     return { kind: 'done', result: s.finalize(), newDex: this.newDex };
   }
 
+  /** End the shift right now from outside (e.g. progress reset while paused). Idempotent. */
+  abort(): void {
+    if (this.cleaned) return;
+    this.exit = { kind: 'abort' };
+    this.endAnalysis();
+    this.closeTransient();
+    this.cleanup(); // synchronously, so nothing of this shift lingers into the next screen
+    this.lab.removeClient();
+    this.lab.removeSample();
+    this.lab.setNight(false);
+  }
+
   private cleanup(): void {
+    if (this.cleaned) return;
+    this.cleaned = true;
+    // a shift can end while the pause menu is open: never leave the game paused
+    this.paused = false;
+    setMinigamePaused(false);
+    this.lab.frozen = false;
+    this.hud.setPaused(false);
+    this.app.layer.querySelectorAll('.pause-modal').forEach((e) => e.remove());
     cancelAnimationFrame(this.raf);
     window.removeEventListener('keydown', this.keyHandler);
     window.removeEventListener('resize', this.resizeHandler);
@@ -438,6 +465,7 @@ export class ShiftController {
     this.say(pick(GERALD.accident));
     this.app.persist();
     await anim;
+    if (this.exit) return;
     if (s.over) await this.fail(s.failReason ?? 'hearts');
   }
 
@@ -491,6 +519,7 @@ export class ShiftController {
     this.app.layer.querySelector('.reading')?.remove();
     this.updateTimer();
     await this.lab.focus('client', 0.6);
+    if (this.exit) return;
     const fill = (t: string) => t.replace(/\{answer\}/g, c.answer.name).replace(/\{guess\}/g, sub.name);
     let line: string;
     if (res.correct) {
@@ -686,30 +715,31 @@ export class ShiftController {
     if (this.paused || this.failing || this.exit) return;
     this.paused = true;
     setMinigamePaused(true);
+    this.lab.frozen = true; // nothing may finish (or fail) the shift behind the menu
+    this.hud.setPaused(true);
     this.tutor.setHidden(true);
     ads.gameplayStop();
+    const leave = (kind: 'restart' | 'quit') => {
+      this.paused = false;
+      setMinigamePaused(false);
+      this.lab.frozen = false;
+      this.hud.setPaused(false);
+      this.exit = { kind };
+      this.endAnalysis();
+      this.closeTransient();
+    };
     pauseMenu(this.app, {
       resume: () => this.resume(),
-      restart: () => {
-        this.paused = false;
-        setMinigamePaused(false);
-        this.exit = { kind: 'restart' };
-        this.endAnalysis();
-        this.closeTransient();
-      },
-      quit: () => {
-        this.paused = false;
-        setMinigamePaused(false);
-        this.exit = { kind: 'quit' };
-        this.endAnalysis();
-        this.closeTransient();
-      },
+      restart: () => leave('restart'),
+      quit: () => leave('quit'),
     });
   }
 
   private resume(): void {
     this.paused = false;
     setMinigamePaused(false);
+    this.lab.frozen = false;
+    this.hud.setPaused(false);
     this.tutor.setHidden(false);
     this.last = performance.now();
     ads.gameplayStart();

@@ -85,6 +85,7 @@ export function floatText(parent: HTMLElement, text: string, x: number, y: numbe
 let toastEl: HTMLElement | null = null;
 export function toast(parent: HTMLElement, text: string, ms = 1800): void {
   toastEl?.remove();
+  parent.querySelectorAll(':scope > .toast').forEach((t) => t.remove());
   const el = document.createElement('div');
   el.className = 'toast';
   el.textContent = text;

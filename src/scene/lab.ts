@@ -61,6 +61,8 @@ export class LabScene {
   sample: SampleView | null = null;
   onStationClick: (id: StationId) => void = () => {};
   paused = false;
+  /** game paused: keep drawing the frame, but hold every animation in place */
+  frozen = false;
   speed = 1;
 
   private container: HTMLElement;
@@ -549,9 +551,10 @@ export class LabScene {
         await this.setDim(1, 0.35);
         st.uvlamp.setOn(1);
         this.uvLight.intensity = 3;
-        if (ok && p.uv !== 'none' && this.sample) {
+        const smp = this.sample;
+        if (ok && p.uv !== 'none' && smp) {
           audio.play('glow');
-          await fx.tweens.run(0.5, (k) => this.sample!.setGlow(reading.color, k));
+          await fx.tweens.run(0.5, (k) => smp.setGlow(reading.color, k));
           this.add.emit({ pos: this.sampleTop(), count: 25, color: reading.color, speed: 0.4, spread: 1, life: 1, size: 0.05 });
         }
         await fx.tweens.wait(1.0);
@@ -914,8 +917,10 @@ export class LabScene {
     this.last = now;
     if (this.paused) return;
     dt = Math.min(dt, DT_CAP);
-    this.t += dt;
-    this.update(dt);
+    if (!this.frozen) {
+      this.t += dt;
+      this.update(dt);
+    }
     this.renderer.render(this.scene, this.camera);
     this.autoQuality(dt);
   }
