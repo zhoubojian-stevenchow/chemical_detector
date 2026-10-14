@@ -1,0 +1,33 @@
+{
+  "name": "chem-detective",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Chem Detective - a 3D chemistry detective lab game for web game portals",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build --mode standalone",
+    "build:standalone": "vite build --mode standalone",
+    "build:poki": "vite build --mode poki --outDir dist-poki",
+    "build:crazygames": "vite build --mode crazygames --outDir dist-crazygames",
+    "build:gamedistribution": "vite build --mode gamedistribution --outDir dist-gamedistribution",
+    "build:adsense": "vite build --mode adsense --outDir dist-adsense",
+    "preview": "vite preview --mode standalone",
+    "test": "vitest run",
+    "release": "node scripts/release.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "dependencies": {
+    "@fontsource/fredoka": "^5.3.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4",
+    "fflate": "0.8.3",
+    "playwright-core": "^1.59.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "4.1.11"
+  }
+}
