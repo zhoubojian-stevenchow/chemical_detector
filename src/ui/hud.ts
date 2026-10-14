@@ -49,6 +49,8 @@ export class Hud {
   private bubbleTimer = 0;
   private lastHearts = -1;
   busy = false;
+  /** called when panel sizes change (so the 3D view can re-centre) */
+  onLayout: () => void = () => {};
 
   constructor(parent: HTMLElement, cb: HudCallbacks) {
     this.parent = parent;
@@ -75,7 +77,11 @@ export class Hud {
       if (act === 'pause') this.cb.pause();
       else if (act === 'reagents') this.busy ? audio.play('error') : this.toggleReagents();
       else if (act === 'tool' && !this.busy) {
-        if (el.classList.contains('in-pop')) this.reagentsOpen = false;
+        if (this.reagentsOpen) {
+          this.reagentsOpen = false;
+          this.root.querySelector('.reagent-pop')?.remove();
+          this.root.querySelector('.tool.group')?.classList.remove('open');
+        }
         this.cb.tool(el.dataset.id as ToolId);
       }
       else if (act === 'tool' && this.busy) audio.play('error');
@@ -203,6 +209,7 @@ export class Hud {
   showPanels(on: boolean): void {
     $(this.root, '.cands').style.display = on ? '' : 'none';
     $(this.root, '.tray').style.display = on ? '' : 'none';
+    this.onLayout();
     const items = this.root.querySelector('.items') as HTMLElement | null;
     if (items) items.style.display = on ? '' : 'none';
     if (!on && this.reagentsOpen) this.toggleReagents(false);
@@ -280,6 +287,13 @@ export class Hud {
     if (group && !parts.some((p) => p.includes('data-act="reagents"'))) parts.push(this.groupButton(reagents));
     if (!group) reagents.forEach((t) => parts.splice(Math.min(parts.length, firstReagentIdx), 0, this.toolButton(t)));
     tray.innerHTML = parts.join('');
+    tray.classList.remove('two-rows');
+    if (!document.body.classList.contains('portrait') && tray.offsetHeight > 120) {
+      tray.classList.add('two-rows');
+      tray.style.setProperty('--per-row', String(Math.ceil(tray.children.length / 2)));
+    }
+    document.documentElement.style.setProperty('--tray-real', `${tray.offsetHeight || 92}px`);
+    this.onLayout();
     tray.querySelectorAll(':scope > button').forEach((b, i) => {
       if (i < 9) b.insertAdjacentHTML('afterbegin', `<span class="kbd">${i + 1}</span>`);
     });

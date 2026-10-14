@@ -1,5 +1,5 @@
 import { audio } from '../core/audio';
-import { pick, wait } from '../core/util';
+import { pick, vibrate, wait } from '../core/util';
 import { CLOCK_SCALE, DT_CAP } from '../config';
 import { ITEMS } from '../data/shop';
 import { FAIL_REASONS, GERALD } from '../data/text';
@@ -77,6 +77,7 @@ export class ShiftController {
       pause: () => this.pause(),
       request: () => toast(this.app.layer, s.current.template.text, 3500),
     });
+    this.hud.onLayout = () => this.app.updateInsets();
     const title = this.mode === 'endless' ? 'Rush Hour' : this.mode === 'daily' ? 'Daily Case' : `${this.level.id}. ${this.level.title}`;
     this.hud.setLevel(title);
     this.hud.setHearts(s.hearts, s.maxHearts);
@@ -311,6 +312,7 @@ export class ShiftController {
         lucky: this.app.progress.luckyChance(),
       });
     }
+    if (this.exit || this.failing) return; // shift ended / failed while the mini-game was on screen
     if (def.minigame !== 'instant') {
       s.registerQuality(q);
       if (q === 'perfect') {
@@ -405,6 +407,7 @@ export class ShiftController {
     this.app.layer.appendChild(overlay);
     setTimeout(() => overlay.remove(), 2600);
     const anim = this.lab.accident(kind);
+    vibrate(kind === 'fire' ? [60, 40, 160] : 200);
     if (absorbed === 'extinguisher') {
       this.data.items.extinguisher = Math.max(0, (this.data.items.extinguisher ?? 0) - 1);
       toast(this.app.layer, 'Phew! Your Extinguisher saved a heart.');
@@ -492,6 +495,7 @@ export class ShiftController {
       line = `${pick(c.client.happy)} ${fill(c.template.win)}`;
     } else {
       audio.play('wrong');
+      vibrate(120);
       this.lab.clientReact('angry');
       s.takeHit('mistake', false);
       this.hud.setHearts(s.hearts, s.maxHearts);
@@ -708,6 +712,13 @@ export class ShiftController {
   private onKey(e: KeyboardEvent): void {
     if (e.code === 'Escape' || e.code === 'KeyP') {
       if (!this.paused) this.pause();
+      else if (e.code === 'Escape') {
+        const m = this.app.layer.querySelector('.pause-modal');
+        if (m) {
+          m.remove();
+          this.resume();
+        }
+      }
       return;
     }
     if (!this.running || this.busy || this.app.layer.querySelector('.modal, .mg')) return;

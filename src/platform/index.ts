@@ -5,8 +5,8 @@ import {
 import type { Platform } from './types';
 
 function pickPlatform(): Platform {
-  const params = new URLSearchParams(location.search);
-  const forced = params.get('platform');
+  // `?platform=` overrides are for development only (never trust URL params in shipped builds)
+  const forced = import.meta.env.DEV ? new URLSearchParams(location.search).get('platform') : null;
   const name = (forced || import.meta.env.VITE_PLATFORM || 'none').toLowerCase();
   switch (name) {
     case 'poki':
@@ -76,11 +76,17 @@ class AdManager {
     this.onAdState(false);
   }
 
+  /** Interstitial when the player presses PLAY (only on platforms that ask for it). */
+  async playBreak(): Promise<void> {
+    if (!this.platform.adOnPlay) return;
+    await this.interstitial(true);
+  }
+
   /** Interstitial at a natural break (between shifts). */
-  async interstitial(): Promise<void> {
+  async interstitial(force = false): Promise<void> {
     if (this.busy) return;
     const now = performance.now();
-    if (now - this.lastInterstitial < this.minGapMs) return;
+    if (!force && now - this.lastInterstitial < this.minGapMs) return;
     const wasPlaying = this.gameplay;
     this.gameplayStop();
     let started = false;

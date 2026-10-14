@@ -81,3 +81,12 @@ export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 export function isTouchDevice(): boolean {
   return typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 }
+
+/** Short haptic buzz on phones that support it. */
+export function vibrate(ms: number | number[]): void {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    /* not supported */
+  }
+}

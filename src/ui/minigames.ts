@@ -111,7 +111,7 @@ class Input {
   }
 }
 
-const AUTOTEST = typeof location !== 'undefined' && /[?&]autotest=1/.test(location.search);
+const AUTOTEST = import.meta.env.DEV && typeof location !== 'undefined' && /[?&]autotest=1/.test(location.search);
 let paused = false;
 let currentArea: HTMLElement | null = null;
 

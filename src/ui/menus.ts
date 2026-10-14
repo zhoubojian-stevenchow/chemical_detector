@@ -33,6 +33,27 @@ export interface Host {
   persist(): void;
   dailyAvailable(): boolean;
   dailyCaseAvailable(): boolean;
+  playPressed(): Promise<void>;
+}
+
+export function howToPlay(host: Host): void {
+  const steps: [string, string][] = [
+    ['question', 'A client brings a mystery sample. The <b>Suspects</b> list shows what it could be.'],
+    ['flame', 'Run tests from the tray. Each test is a quick skill game — nail it for a <b>PERFECT</b> combo bonus.'],
+    ['check', 'Every reading stamps <b>RULED OUT</b> on suspects that don\'t match. Tap any suspect to see what each test <i>should</i> show.'],
+    ['star', 'Tap the last suspect and press <b>IDENTIFY</b> — or make a risky <b>Bold Call</b> early for bigger pay.'],
+    ['heart', 'Botched tests can backfire (fires, fumes!) and wrong reports cost hearts. Run out of hearts or time and the shift fails.'],
+    ['cart', 'Spend coins on upgrades, perks and items. Rank up to unlock skills. Collect all substances in the <b>Chem Dex</b>!'],
+  ];
+  const m = modal(
+    host.layer,
+    `<button class="btn icon small white close-x" data-act="close">${icon('close').replace(/#fff/g, '#22223b')}</button>
+    <h2 class="modal-title">How to play</h2>
+    <div class="objectives">${steps.map(([ic, t]) => `<div class="objective">${ic === 'flame' ? toolIcon('flame') : icon(ic).replace(/#fff"/g, '#22223b"')}<span>${t}</span></div>`).join('')}</div>
+    <p class="modal-sub" style="font-size:14px">Keyboard: <b>1–9</b> tools · <b>Space</b> mini-games · <b>Esc</b> pause</p>
+    <div class="modal-actions"><button class="btn yellow big" data-act="close">Got it!</button></div>`,
+  );
+  onAct(m.root, (act) => act === 'close' && m.close());
 }
 
 export function clearLayer(host: Host): void {
@@ -66,13 +87,15 @@ export function titleScreen(host: Host): void {
         <button class="btn icon white" data-act="skills" title="Skills" style="position:relative">${icon('brain')}${p.skillPointsFree() > 0 ? `<span class="badge-dot">${p.skillPointsFree()}</span>` : ''}</button>
         <button class="btn icon white" data-act="dex" title="Chem Dex">${icon('book')}</button>
         <button class="btn icon white" data-act="settings" title="Settings">${icon('gear')}</button>
+        <button class="btn icon white" data-act="help" title="How to play">${icon('question')}</button>
       </div>
       <div class="title-foot">v${GAME.version} · ${esc(GAME.company)}</div>
     </div>
   </div>`);
   host.layer.appendChild(el);
   onAct(el, (act) => {
-    if (act === 'play') host.showMap();
+    if (act === 'play') void host.playPressed();
+    if (act === 'help') howToPlay(host);
     if (act === 'endless') endlessLocked ? lockedToast(host, 'Clear level 10 to unlock Rush Hour!') : host.startEndless();
     if (act === 'dailycase') dailyLocked ? lockedToast(host, 'Clear level 5 to unlock the Daily Case!') : host.startDailyCase();
     if (act === 'shop') host.showShop();

@@ -137,8 +137,8 @@ export class LabScene {
       st.root.visible = false;
       this.scene.add(st.root);
     }
-    this.gerald.root.position.set(0.34, BENCH_Y, -0.32);
-    this.gerald.root.rotation.y = -0.35;
+    this.gerald.root.position.set(0.44, BENCH_Y, -0.36);
+    this.gerald.root.rotation.y = -0.45;
     this.gerald.root.scale.setScalar(1.25);
     this.scene.add(this.gerald.root);
     this.scene.add(this.add.points, this.norm.points);
@@ -220,6 +220,8 @@ export class LabScene {
   }
 
   setInsets(i: Insets): void {
+    const o = this.insets;
+    if (o.top === i.top && o.right === i.right && o.bottom === i.bottom && o.left === i.left) return;
     this.insets = i;
     this.resize();
   }
@@ -240,13 +242,16 @@ export class LabScene {
 
   private poseFor(p: Pose): { pos: THREE.Vector3; target: THREE.Vector3; need: number } {
     switch (p) {
-      case 'overview':
-        return { pos: new THREE.Vector3(0.1, 2.0, 1.3), target: new THREE.Vector3(0.1, 1.08, -0.7), need: 1.75 };
+      case 'overview': {
+        const narrow = this.safeAspect() < 1.1;
+        return { pos: new THREE.Vector3(0.1, 2.0, 1.3), target: new THREE.Vector3(0.1, 1.08, -0.7), need: narrow ? 1.25 : 1.75 };
+      }
       case 'client':
         // look slightly above the head so the face sits below the speech box
         return { pos: new THREE.Vector3(0, 2.05, 0.9), target: new THREE.Vector3(0, 1.9, -2.6), need: 1.45 };
       case 'sample':
-        return { pos: new THREE.Vector3(-0.1, 1.6, 0.8), target: SAMPLE_POS.clone().add(new THREE.Vector3(0, 0.12, 0)), need: 0.5 };
+        // aim a little low so the sample sits above the mini-game panel
+        return { pos: new THREE.Vector3(-0.12, 1.5, 0.8), target: SAMPLE_POS.clone().add(new THREE.Vector3(0, 0.02, 0)), need: 0.5 };
       case 'menu': {
         const a = Math.sin(this.orbit * 0.12) * 0.35;
         const target = new THREE.Vector3(0, 1.3, -1.2);
@@ -258,15 +263,23 @@ export class LabScene {
         return this.poseFor('sample');
       default: {
         const st = this.stations[p as Exclude<StationId, 'nose'>];
-        let target = st.focusWorld();
+        // aim below the instrument so it sits in the upper half (the mini-game panel covers the lower part)
+        const drop = new THREE.Vector3(0, -0.1, 0);
+        let target = st.focusWorld().add(drop);
         // tools that reach over to the sample: frame both the instrument and the sample mat
         if (p === 'phbox' || p === 'magnet') {
-          target = target.lerp(SAMPLE_POS.clone().add(new THREE.Vector3(0, 0.1, 0)), 0.5);
+          target = target.lerp(SAMPLE_POS.clone().add(new THREE.Vector3(0, 0.0, 0)), 0.5);
           return { pos: target.clone().add(new THREE.Vector3(0, 0.5, 0.85)), target, need: 0.6 };
         }
         return { pos: target.clone().add(st.camOffset), target, need: 0.38 };
       }
     }
+  }
+
+  private safeAspect(): number {
+    const safeW = Math.max(100, this.width - this.insets.left - this.insets.right);
+    const safeH = Math.max(100, this.height - this.insets.top - this.insets.bottom);
+    return safeW / safeH;
   }
 
   /** Scale camera distance so the important part fits the visible (safe) area. */

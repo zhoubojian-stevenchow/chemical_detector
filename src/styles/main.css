@@ -2307,3 +2307,87 @@ body.portrait .reagent-pop .tool {
     height: 48px;
   }
 }
+
+/* portrait fixes */
+body.portrait .cand-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cand {
+  min-width: 0;
+}
+.cand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reagent-pop {
+  max-width: calc(100% - 16px);
+}
+.reagent-pop .pop-row {
+  flex-wrap: wrap;
+}
+body.portrait .tray {
+  height: auto;
+  flex-wrap: wrap;
+  overflow: visible;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+}
+body.portrait .tray .tool {
+  flex: 0 0 calc((100% - 30px) / 6);
+  min-width: 0;
+  max-width: none;
+  height: 64px;
+  font-size: 11px;
+}
+body.portrait .tray .tool .tool-ico {
+  width: 30px;
+  height: 30px;
+}
+body.portrait .cands {
+  bottom: calc(var(--tray-real, 92px) + 16px + var(--safe-b));
+}
+body.portrait .dialog {
+  top: auto;
+  bottom: calc(18px + var(--safe-b));
+}
+
+/* landscape tray: wrap into a compact second row instead of scrolling */
+.tray {
+  flex-wrap: wrap;
+  height: auto;
+  min-height: var(--tray-h);
+  overflow: visible;
+  align-content: center;
+}
+.tray .tool {
+  height: 80px;
+}
+.tray.two-rows {
+  gap: 5px;
+  padding: 5px;
+}
+.tray.two-rows .tool {
+  height: 58px;
+  font-size: 10.5px;
+  min-width: 52px;
+}
+.tray.two-rows .tool .tool-ico {
+  width: 28px;
+  height: 28px;
+}
+.mg {
+  bottom: calc(var(--tray-real, var(--tray-h)) + 22px + var(--safe-b));
+}
+.items {
+  bottom: calc(var(--tray-real, var(--tray-h)) + 24px + var(--safe-b));
+}
+body.portrait .mg {
+  bottom: calc(var(--tray-real, var(--tray-h)) + 16px + var(--safe-b));
+}
+
+.tray.two-rows .tool {
+  flex: 0 0 calc((100% - 10px - (var(--per-row, 6) - 1) * 5px) / var(--per-row, 6));
+  max-width: none;
+}

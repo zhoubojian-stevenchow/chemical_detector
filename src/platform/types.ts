@@ -8,6 +8,8 @@ export interface Platform {
   readonly name: string;
   /** true if rewarded ads can be offered (shows the "watch ad" buttons) */
   readonly hasRewarded: boolean;
+  /** request an interstitial when the player presses PLAY on the title screen (GameDistribution guideline) */
+  readonly adOnPlay?: boolean;
   init(): Promise<void>;
   loadingProgress(p: number): void;
   loadingFinished(): void;

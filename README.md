@@ -67,8 +67,8 @@ Each zip contains a plain `index.html` + `assets/` folder with relative paths �
 * **Any other portal** – start from the standalone build, or add a new adapter in `src/platform/adapters.ts`
   (implement the small `Platform` interface in `src/platform/types.ts`) and register it in `src/platform/index.ts`.
 
-You can also force a platform at runtime with `?platform=poki|crazygames|gamedistribution|adsense|local|none`
-(handy for testing the `local` fake-ad overlay on any build).
+In development (`npm run dev`) you can force a platform with `?platform=poki|crazygames|gamedistribution|adsense|local|none`.
+Production builds ignore URL overrides, so players can't switch ad providers or skip mini-games.
 
 ### Where ads appear
 
@@ -80,6 +80,7 @@ You can also force a platform at runtime with `?platform=poki|crazygames|gamedis
 | Shop “Free 150 coins” | Rewarded | 4-minute cooldown |
 | Daily bonus “Claim ×2” | Rewarded | |
 | Between shifts (Next / Retry / Map) | Interstitial | Not before shift 3; the game also enforces a 2-minute minimum gap (portals apply their own caps too) |
+| PLAY button on the title screen | Interstitial | GameDistribution build only (their guideline); other portals skip it |
 
 During every ad the game pauses, stops `gameplay` events and mutes all audio, as portal guidelines require.
 

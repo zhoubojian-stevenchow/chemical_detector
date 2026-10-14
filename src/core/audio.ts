@@ -157,6 +157,7 @@ export class AudioEngine {
     const t = this.ctx.currentTime + (opts.at ?? 0);
     const src = this.ctx.createBufferSource();
     src.buffer = this.noise;
+    src.loop = true;
     const f = this.ctx.createBiquadFilter();
     f.type = opts.type ?? 'bandpass';
     f.frequency.setValueAtTime(opts.freq ?? 1000, t);

@@ -113,6 +113,7 @@ boot().catch((e) => {
 /** Development-only helpers (stripped from production builds). */
 function devCheats(app: App): void {
   const q = new URLSearchParams(location.search);
+  if (q.has('fresh')) save.reset();
   const d = save.data;
   if (q.has('unlockall')) {
     for (let i = 1; i <= 60; i++) d.levels[i] = d.levels[i] ?? { stars: [true, true, true], best: 0 };
@@ -120,7 +121,6 @@ function devCheats(app: App): void {
     d.xp = Math.max(d.xp, 8000);
   }
   if (q.has('coins')) d.coins = Number(q.get('coins'));
-  if (q.has('fresh')) save.reset();
   const lvl = Number(q.get('level'));
   if (lvl) {
     for (let i = 1; i < lvl; i++) d.levels[i] = d.levels[i] ?? { stars: [true, false, false], best: 0 };

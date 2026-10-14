@@ -68,7 +68,7 @@ export class App implements Host {
     this.lab.setHat(this.data.hat);
   }
 
-  /** Layout-aware insets so the 3D view centres in the free space. */
+  /** Layout-aware insets so the 3D view centres in the free space (measured from the real HUD panels). */
   updateInsets(): void {
     const w = window.innerWidth;
     const hgt = window.innerHeight;
@@ -80,9 +80,18 @@ export class App implements Host {
     }
     const short = !portrait && hgt <= 520;
     const top = short ? 50 : 58;
-    const tray = portrait ? 92 : short ? 84 : 104;
-    if (portrait) this.lab.setInsets({ top, right: 0, bottom: tray + 26 + hgt * 0.37, left: 0 });
-    else this.lab.setInsets({ top, right: Math.max(250, Math.min(350, w * 0.28)) + 20, bottom: tray + 20, left: 0 });
+    const cands = this.layer.querySelector('.cands') as HTMLElement | null;
+    const tray = this.layer.querySelector('.tray') as HTMLElement | null;
+    const visible = (el: HTMLElement | null) => !!el && el.style.display !== 'none' && el.offsetHeight > 0;
+    // panels hidden (client dialog): reserve the same space so the camera doesn't jump around
+    const trayH = visible(tray) ? hgt - tray!.getBoundingClientRect().top : portrait ? 160 : short ? 104 : 124;
+    if (portrait) {
+      const bottom = visible(cands) ? hgt - cands!.getBoundingClientRect().top : trayH + hgt * 0.37 + 16;
+      this.lab.setInsets({ top, right: 0, bottom: Math.round(bottom + 6), left: 0 });
+    } else {
+      const right = visible(cands) ? w - cands!.getBoundingClientRect().left : Math.max(250, Math.min(350, w * 0.28)) + 10;
+      this.lab.setInsets({ top, right: Math.round(right + 10), bottom: Math.round(trayH + 6), left: 0 });
+    }
   }
 
   // ───────────────────────── navigation ─────────────────────────
@@ -168,6 +177,11 @@ export class App implements Host {
 
   dailyAvailable(): boolean {
     return dailyStatus(this).available;
+  }
+
+  async playPressed(): Promise<void> {
+    await ads.playBreak();
+    this.showMap();
   }
 
   dailyCaseAvailable(): boolean {
@@ -335,7 +349,7 @@ export class App implements Host {
           this.showMap(ch);
           return;
         }
-        clearLayer(this);
+        this.showMap(ch);
         levelIntro(this, levelId);
         return;
       }

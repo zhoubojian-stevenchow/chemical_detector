@@ -205,6 +205,7 @@ export class CrazyGamesPlatform implements Platform {
 export class GameDistributionPlatform implements Platform {
   readonly name = 'gamedistribution';
   readonly hasRewarded = true;
+  readonly adOnPlay = true;
   private ok = false;
   private resume: (() => void) | null = null;
   private rewardEarned = false;
