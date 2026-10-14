@@ -57,6 +57,13 @@ class Input {
     const down = (e: PointerEvent) => {
       if (paused) return;
       e.preventDefault();
+      // the HUD pause button sits under the full-screen catcher: let it through
+      const pauseBtn = document.querySelector<HTMLElement>('.hud [data-act=pause]');
+      const r = pauseBtn?.getBoundingClientRect();
+      if (pauseBtn && r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+        pauseBtn.click();
+        return;
+      }
       this.holding = true;
       this.dragging = true;
       this.updateDrag(e);

@@ -111,11 +111,13 @@ export class ShiftController {
     this.raf = requestAnimationFrame(() => this.tick());
 
     await this.lab.focus('overview', 0.8);
-    if (newTools.length) {
+    if (this.exit) {
+      // left before the first case
+    } else if (newTools.length) {
       this.lab.setTools(s.cfg.tools, true);
       audio.play('fanfare');
       this.say(pick(GERALD.newTool));
-      await wait(700);
+      await this.sleep(700);
     } else this.say(pick(GERALD.shiftStart));
 
     try {
@@ -131,6 +133,17 @@ export class ShiftController {
     }
     if (this.exit) return this.exit;
     return { kind: 'done', result: s.finalize(), newDex: this.newDex };
+  }
+
+  /** After any await: was this shift left (quit / restart / abort) or is its fail screen up? */
+  private get gone(): boolean {
+    return this.exit !== null || this.cleaned || this.failing;
+  }
+
+  /** A timed wait that also respects the pause menu. */
+  private async sleep(ms: number): Promise<void> {
+    await wait(ms);
+    while (this.paused && !this.exit) await wait(100);
   }
 
   /** End the shift right now from outside (e.g. progress reset while paused). Idempotent. */
@@ -335,11 +348,13 @@ export class ShiftController {
     const station = TOOL_STATION[id];
     const pose = station === 'nose' || id === 'splint' || id === 'uv' ? 'sample' : station;
     await Promise.all([this.lab.focus(pose, 0.55), this.lab.prepTest(id, sub)]);
+    if (this.gone) return; // left (or failed) during the set-up animation
     let q: Quality;
     const auto = this.app.progress.isAuto(id);
     if (def.minigame === 'instant') q = 'good';
     else if (auto) {
-      await wait(250);
+      await this.sleep(250);
+      if (this.gone) return;
       q = 'perfect';
     } else {
       q = await playMinigame(this.app.layer, {
@@ -351,7 +366,7 @@ export class ShiftController {
         lucky: this.app.progress.luckyChance(),
       });
     }
-    if (this.exit || this.failing) return; // shift ended / failed while the mini-game was on screen
+    if (this.gone) return; // shift ended / failed while the mini-game was on screen
     if (def.minigame !== 'instant') {
       s.registerQuality(q);
       if (s.combo > (this.data.stats.bestCombo ?? 0)) this.data.stats.bestCombo = s.combo;
@@ -372,15 +387,17 @@ export class ShiftController {
     if (accident && q !== 'miss') {
       // e.g. a strong whiff of something nasty: you still smelled it, but it hurt
       await this.accident(accident);
+      if (this.gone) return;
     }
     await this.lab.playTest(id, sub, result?.reading ?? describe(id, s.tierOf(id), sub), q);
+    if (this.gone) return;
     if (accident && q === 'miss') await this.accident(accident);
-    if (this.failing || this.exit) return;
+    if (this.gone) return;
     if (result) this.showResult(result.reading, result.ruledOut);
     else toast(this.app.layer, 'Botched! No reading — you can try that test again.');
     if (s.runCost(id)) this.hud.setCoins(s.coins - s.spent);
     await this.lab.focus('overview', 0.55);
-    if (this.exit) return;
+    if (this.gone) return;
     this.busy = false;
     this.hud.setBusy(false);
     this.refreshTools();
@@ -550,6 +567,7 @@ export class ShiftController {
     if (this.exit) return;
     void this.lab.clientLeave();
     await this.lab.tossSample();
+    if (this.exit) return;
     this.lab.removeClient();
     this.busy = false;
     if (s.over) {
@@ -583,6 +601,7 @@ export class ShiftController {
       }
       this.running = false;
       const ok = await this.app.rewarded();
+      if (this.exit) return;
       this.running = true;
       if (!ok) return;
       this.adItemUsed = true;
@@ -613,7 +632,7 @@ export class ShiftController {
   // ───────────────────────── failure / pause ─────────────────────────
 
   private async fail(reason: 'time' | 'hearts' | 'inspector'): Promise<void> {
-    if (this.failing) return;
+    if (this.failing || this.exit || this.cleaned) return; // never for a shift that was already left
     this.failing = true;
     this.running = false;
     this.busy = true;
@@ -761,8 +780,9 @@ export class ShiftController {
     if (e.code === 'Escape' || e.code === 'KeyP') {
       if (!this.paused) this.pause();
       else if (e.code === 'Escape') {
+        const modals = this.app.layer.querySelectorAll('.modal');
         const m = this.app.layer.querySelector('.pause-modal');
-        if (m) {
+        if (m && modals[modals.length - 1] === m) {
           m.remove();
           this.resume();
         }
@@ -813,7 +833,7 @@ export class ShiftController {
     if (this.tutorialStep !== 1) return;
     this.tutorialStep = 2;
     this.running = false;
-    await wait(600);
+    await this.sleep(600);
     if (this.exit) return;
     await this.tutor.show($(this.hud.root, '.cands'), 'Look! Every suspect that does not match the reading got RULED OUT.', 'Cool');
     if (this.exit) return;

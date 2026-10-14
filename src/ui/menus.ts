@@ -230,7 +230,7 @@ export function pauseMenu(host: Host, cb: { resume(): void; restart(): void; qui
   const m = modal(
     host.layer,
     `<h2 class="modal-title">Paused</h2><p class="modal-sub">The samples will wait. Probably.</p>
-    <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:300px;margin:0 auto">
+    <div class="pause-btns">
       <button class="btn big yellow" data-act="resume">${icon('play').replace('#fff', '#22223b')} Resume</button>
       <button class="btn" data-act="restart">${icon('replay')} Restart shift</button>
       <button class="btn white" data-act="settings">${icon('gear')} Settings</button>

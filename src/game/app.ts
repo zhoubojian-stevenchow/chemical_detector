@@ -42,6 +42,7 @@ export class App implements Host {
     ads.onAdState = (playing) => {
       this.lab.paused = playing;
     };
+    this.lab.setAccidentDays(this.data.accStreak);
   }
 
   get data(): SaveData {
@@ -277,6 +278,10 @@ export class App implements Host {
   resetProgress(): void {
     this.abortShift(); // reset can be reached from the pause menu's settings
     save.reset();
+    this.pendingRank = null;
+    this.pendingChapter = null;
+    this.dailyPrompted = false;
+    this.lab.setAccidentDays(0);
     this.applySettings();
     toast(this.layer, 'Progress erased. Fresh lab coat!');
     this.showTitle();
@@ -387,6 +392,7 @@ export class App implements Host {
       d.xp += r.xp;
       d.stats.shifts++;
       if (shift.accidents === 0 && r.cleared) d.accStreak += 1;
+      this.lab.setAccidentDays(d.accStreak);
       this.recordDex(exit.newDex);
       const newChapter = CHAPTERS.find((c, i) => !chaptersBefore[i] && this.progress.chapterUnlocked(c.id));
       if (newChapter) this.pendingChapter = newChapter.id;

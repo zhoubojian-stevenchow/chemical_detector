@@ -2659,3 +2659,99 @@ body.portrait .mg {
     height: 16px;
   }
 }
+
+/* pause menu buttons (a 2-column grid on short screens so "Quit to map" never hides) */
+.pause-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  max-width: 300px;
+  margin: 0 auto;
+}
+@media (max-height: 520px) {
+  .pause-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-width: 440px;
+  }
+  .pause-btns .btn.big {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    font-size: 20px;
+    padding: 6px 20px;
+  }
+  .pause-modal .modal-sub {
+    margin-bottom: 8px;
+  }
+}
+
+/* case counter: its two parts may wrap instead of pushing the coins off-screen */
+.case-count {
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  line-height: 1.05;
+}
+@media (orientation: portrait) and (max-width: 430px) {
+  body.portrait .case-count .cc-word {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  body.portrait .hearts {
+    gap: 0;
+  }
+  body.portrait .hearts svg {
+    width: 16px;
+    height: 16px;
+  }
+  body.portrait .timer {
+    flex: none;
+    min-width: 52px;
+  }
+}
+/* portrait phones: a slimmer shift top bar so 4-digit coins and up to 6 hearts still fit */
+@media (orientation: portrait) and (max-width: 430px) {
+  body.portrait .hud-top {
+    gap: 5px;
+    padding: 8px 6px 0;
+  }
+  body.portrait .timer {
+    font-size: 20px;
+    min-width: 0;
+    flex: none;
+    padding: 4px 12px;
+  }
+  body.portrait .timer .t-ico {
+    display: none;
+  }
+  body.portrait .hearts {
+    gap: 0;
+  }
+  body.portrait .hearts svg {
+    width: 20px;
+    height: 20px;
+  }
+  body.portrait .hud-top .pill {
+    font-size: 15px;
+    padding: 0 10px 0 5px;
+  }
+  body.portrait .hud-top .pill svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+@media (orientation: portrait) and (max-width: 360px) {
+  body.portrait .hearts svg {
+    width: 16px;
+    height: 16px;
+  }
+  body.portrait .timer {
+    font-size: 18px;
+  }
+  body.portrait .hud-top .pill {
+    font-size: 13px;
+  }
+}
