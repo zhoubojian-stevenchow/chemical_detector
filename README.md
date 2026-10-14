@@ -35,12 +35,17 @@ mobile + desktop controls, and a long progression loop designed for long session
 npm install          # Node 18+ (tested on Node 22)
 npm run dev          # http://localhost:5173 — dev build with simulated test ads
 npm test             # data validation: every one of the 60 levels is proven solvable
-npm run release      # builds every portal version → release/*.zip
+npm run release      # builds every portal version → release/*.zip  (+ the single-file .html)
+npm run build:single # just the single-file edition → release/chem-detective-v1.0.0.html
 ```
 
+**Just want to play?** Open `release/chem-detective-v1.0.0.html` in any modern browser (Chrome, Edge, Firefox, Safari).
+That one file *is* the complete game — all 60 levels, 3D lab, music, fonts and saves — no server, no install, no internet needed.
+Progress is saved in the browser, so it is kept between sessions as long as you open the file from the same place in the same browser.
+
 Dev-only URL helpers (they are stripped from production builds):
-`?level=25` jump straight into a level · `?unlockall` unlock everything · `?coins=5000` · `?fresh` wipe the save ·
-`?lowgfx=1` start without anti-aliasing.
+`?level=25` jump straight into a level · `?unlockall` unlock everything · `?coins=5000` · `?fresh` wipe the save.
+`?lowgfx=1` (start in low graphics, no anti-aliasing) also works in every build.
 
 ## Publishing
 
@@ -55,6 +60,8 @@ Dev-only URL helpers (they are stripped from production builds):
 | `chem-detective-standalone-*.zip` | itch.io, your own site without ads, or as a base for another portal | none (reward buttons are hidden) |
 
 Each zip contains a plain `index.html` + `assets/` folder with relative paths — it runs from any folder, CDN or iframe.
+
+There is also **`chem-detective-v*.html`** — the ad-free edition packed into a single ~1 MB file (script, styles, fonts and icon inlined; third-party licences in a comment at the top). Use it to play or demo the game offline, send it to a buyer for evaluation, or upload it anywhere that accepts a single HTML file. For ad-revenue portals, upload the matching zip instead.
 
 ### Per-platform setup
 
@@ -131,6 +138,7 @@ src/
   styles/main.css
 tests/                 Vitest: data validation, rules engine, achievements
 scripts/release.mjs    builds & zips every platform variant
+scripts/singlefile.mjs packs a build into one self-contained .html
 ```
 
 ## Tech
