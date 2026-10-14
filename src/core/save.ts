@@ -31,7 +31,9 @@ export interface SaveData {
   dex: Record<string, number>;
   flags: Record<string, boolean>;
   settings: Settings;
-  stats: { cases: number; correct: number; accidents: number; perfects: number; shifts: number; bold: number };
+  stats: { cases: number; correct: number; accidents: number; perfects: number; shifts: number; bold: number; bestCombo: number };
+  /** unlocked achievements */
+  achievements: Record<string, boolean>;
   daily: { last: string; streak: number };
   dailyCase: { last: string };
   endlessBest: number;
@@ -59,7 +61,8 @@ export function defaultSave(): SaveData {
     dex: {},
     flags: {},
     settings: { music: 0.6, sfx: 0.85, quality: 'auto', shake: true },
-    stats: { cases: 0, correct: 0, accidents: 0, perfects: 0, shifts: 0, bold: 0 },
+    stats: { cases: 0, correct: 0, accidents: 0, perfects: 0, shifts: 0, bold: 0, bestCombo: 0 },
+    achievements: {},
     daily: { last: '', streak: 0 },
     dailyCase: { last: '' },
     endlessBest: 0,

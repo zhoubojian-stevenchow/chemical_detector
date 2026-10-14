@@ -259,6 +259,8 @@ export class Room {
 
   applyTheme(colors: [string, string, string, string]): void {
     const [wall, fa, fb, accent] = colors;
+    this.wallMat.map?.dispose();
+    this.floorMat.map?.dispose();
     const t = tileWallTexture(wall);
     t.repeat.set(6, 3);
     this.wallMat.map = t;

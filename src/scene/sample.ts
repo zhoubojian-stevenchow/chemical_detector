@@ -220,6 +220,12 @@ export class SampleView {
       if (m.isMesh) m.geometry.dispose();
     });
     for (const m of this.contentMats) m.dispose();
+    const label = this.root.getObjectByName('label') as THREE.Mesh | undefined;
+    if (label) {
+      const lm = label.material as THREE.MeshStandardMaterial;
+      lm.map?.dispose();
+      lm.dispose();
+    }
   }
 }
 

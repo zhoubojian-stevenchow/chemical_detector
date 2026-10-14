@@ -2391,3 +2391,106 @@ body.portrait .mg {
   flex: 0 0 calc((100% - 10px - (var(--per-row, 6) - 1) * 5px) / var(--per-row, 6));
   max-width: none;
 }
+
+/* achievements */
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.ach {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+}
+.ach.got {
+  background: #fff6cf;
+}
+.ach-ico {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ach.got .ach-ico {
+  background: var(--yellow);
+}
+.ach:not(.got) .ach-ico {
+  filter: grayscale(0.8);
+  opacity: 0.7;
+}
+.ach-ico svg {
+  width: 36px;
+  height: 36px;
+}
+.ach-body {
+  flex: 1;
+  min-width: 0;
+}
+.ach-name {
+  font-weight: 700;
+  font-size: 16px;
+}
+.ach-desc {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.ach-reward {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+.ach-reward.dim {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.ach-bar {
+  height: 14px;
+  margin-top: 4px;
+}
+.ach-bar span {
+  font-size: 10px;
+}
+.ach-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 18px 10px 12px;
+  background: #fff6cf;
+  animation: bannerIn 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+  pointer-events: none;
+  transition: transform 0.4s, opacity 0.4s;
+}
+.ach-banner svg {
+  width: 44px;
+  height: 44px;
+}
+.ach-banner.out {
+  transform: translate(-50%, -120%);
+  opacity: 0;
+}
+.ach-banner-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--purple-d);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+@keyframes bannerIn {
+  from {
+    transform: translate(-50%, -140%);
+  }
+}

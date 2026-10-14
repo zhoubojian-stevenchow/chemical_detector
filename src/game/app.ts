@@ -13,7 +13,8 @@ import { toast } from '../ui/dom';
 import {
   chapterUnlockedModal, clearLayer, levelIntro, mapScreen, rankUpModal, resultsModal, titleScreen, type Host,
 } from '../ui/menus';
-import { dailyModal, dailyStatus, dexScreen, settingsModal, shopScreen, skillsScreen } from '../ui/meta';
+import { achievementBanners, achievementsScreen, dailyModal, dailyStatus, dexScreen, settingsModal, shopScreen, skillsScreen } from '../ui/meta';
+import { ACHIEVEMENTS } from '../data/achievements';
 import { ShiftController } from './controller';
 import { Progress } from './progress';
 import { Shift, TEMPLATE_FIRST_LEVEL, type Mode } from './shift';
@@ -58,14 +59,29 @@ export class App implements Host {
     });
   }
 
+  private applied = { quality: '', theme: '', hat: '', shake: -1 };
+
+  /** Apply settings; only touches the parts that actually changed (sliders fire this a lot). */
   applySettings(): void {
     const s = this.data.settings;
     audio.setVolumes(s.music, s.sfx);
-    this.lab.setQuality(s.quality);
-    document.body.classList.toggle('no-shake', !s.shake);
-    const theme = COSMETICS.find((c) => c.id === this.data.theme) ?? COSMETICS.find((c) => c.id === 'theme_classic')!;
-    this.lab.setTheme(theme.colors!);
-    this.lab.setHat(this.data.hat);
+    if (this.applied.quality !== s.quality) {
+      this.applied.quality = s.quality;
+      this.lab.setQuality(s.quality);
+    }
+    if (this.applied.shake !== Number(s.shake)) {
+      this.applied.shake = Number(s.shake);
+      document.body.classList.toggle('no-shake', !s.shake);
+    }
+    if (this.applied.theme !== this.data.theme) {
+      this.applied.theme = this.data.theme;
+      const theme = COSMETICS.find((c) => c.id === this.data.theme) ?? COSMETICS.find((c) => c.id === 'theme_classic')!;
+      this.lab.setTheme(theme.colors!);
+    }
+    if (this.applied.hat !== this.data.hat) {
+      this.applied.hat = this.data.hat;
+      this.lab.setHat(this.data.hat);
+    }
   }
 
   /** Layout-aware insets so the 3D view centres in the free space (measured from the real HUD panels). */
@@ -133,6 +149,7 @@ export class App implements Host {
       this.chapter = this.progress.chapterUnlocked(ch) ? ch : Math.max(1, ch - 1);
     }
     mapScreen(this, this.chapter);
+    this.checkAchievements();
     if (this.pendingChapter) {
       const ch = this.pendingChapter;
       this.pendingChapter = null;
@@ -152,6 +169,7 @@ export class App implements Host {
   showShop(tab?: string): void {
     shopScreen(this, tab, () => {
       this.applySettings();
+      this.checkAchievements();
       this.back();
     });
   }
@@ -164,6 +182,31 @@ export class App implements Host {
     dexScreen(this, () => this.back());
   }
 
+  showAchievements(): void {
+    this.checkAchievements();
+    achievementsScreen(this, () => this.back());
+  }
+
+  /** Unlock & reward any achievements whose goal is now met. */
+  checkAchievements(): void {
+    const d = this.data;
+    const stars = this.progress.totalStars();
+    const rank = this.progress.rank();
+    const fresh = ACHIEVEMENTS.filter((a) => {
+      if (d.achievements[a.id]) return false;
+      const [cur, goal] = a.progress(d, stars, rank);
+      return cur >= goal;
+    });
+    for (const a of fresh) {
+      d.achievements[a.id] = true;
+      d.coins += a.reward.coins ?? 0;
+      d.bonusSkillPoints += a.reward.skill ?? 0;
+    }
+    if (!fresh.length) return;
+    achievementBanners(this, fresh);
+    this.persist();
+  }
+
   showSettings(onClose?: () => void): void {
     settingsModal(this, () => this.applySettings(), () => this.resetProgress());
     void onClose;
@@ -172,6 +215,7 @@ export class App implements Host {
   openDaily(): void {
     dailyModal(this, () => {
       if (this.layer.querySelector('.meta-screen')) mapScreen(this, this.chapter);
+      this.checkAchievements();
     });
   }
 
@@ -302,6 +346,7 @@ export class App implements Host {
       const newChapter = CHAPTERS.find((c, i) => !chaptersBefore[i] && this.progress.chapterUnlocked(c.id));
       if (newChapter) this.pendingChapter = newChapter.id;
       this.persist();
+      this.checkAchievements();
       if (r.cleared) {
         this.lab.celebrate();
         audio.play('fanfare');

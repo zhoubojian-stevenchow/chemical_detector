@@ -23,6 +23,7 @@ mobile + desktop controls, and a long progression loop designed for long session
 | **31 characters, 89 case scenarios** | Each with funny request / success / failure lines and a babbling voice |
 | **Deep progression** | 18 equipment upgrades (pro & automatic tiers), 8 lab perks, 4 consumables, 12 cosmetics (Gerald hats + lab themes), 9 skills, 18 ranks |
 | **Replay modes** | 3 stars per level (Clear / Flawless / Speedy), **Rush Hour** endless mode, **Daily Case**, 7-day **daily bonus** |
+| **25 achievements** | Funny long-term goals ("Eyebrows Optional", "Human Pipette", "Element Whisperer"…) that pay out coins and bonus skill points |
 | **Risk/reward** | *Bold Call* — identify early with several suspects left for a bigger payout |
 | **Ads built in** | Rewarded ads (double coins, continue after failing, free items, free coins, double daily bonus) + interstitials between shifts, behind one adapter layer |
 | **Tiny & fast** | ~1.1 MB total download, all 3D models / art / music / sound effects are generated in code — no asset licences to worry about |
@@ -122,13 +123,13 @@ src/
   config.ts            branding + tuning
   main.ts              boot sequence
   core/                audio synth, save system, tweens, utilities
-  data/                substances, tools, clients, cases, levels, shop, skills, jokes
+  data/                substances, tools, clients, cases, levels, shop, skills, achievements, jokes
   game/                deduction engine, shift rules, progression, controller, app/navigation
   platform/            ad/portal adapters (Poki, CrazyGames, GameDistribution, AdSense, local, none)
   scene/               Three.js lab: room, instruments, characters, Gerald, particles, camera
-  ui/                  HUD, menus, shop/skills/dex/settings, mini-games, tutorial, icons
+  ui/                  HUD, menus, shop/skills/dex/achievements/settings, mini-games, tutorial, icons
   styles/main.css
-tests/                 Vitest: data validation + rules engine
+tests/                 Vitest: data validation, rules engine, achievements
 scripts/release.mjs    builds & zips every platform variant
 ```
 

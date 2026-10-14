@@ -23,6 +23,7 @@ export interface Host {
   showShop(tab?: string): void;
   showSkills(): void;
   showDex(): void;
+  showAchievements(): void;
   showSettings(onClose?: () => void): void;
   openDaily(): void;
   openLevel(id: number): void;
@@ -86,6 +87,7 @@ export function titleScreen(host: Host): void {
         <button class="btn icon white" data-act="shop" title="Shop">${icon('cart')}</button>
         <button class="btn icon white" data-act="skills" title="Skills" style="position:relative">${icon('brain')}${p.skillPointsFree() > 0 ? `<span class="badge-dot">${p.skillPointsFree()}</span>` : ''}</button>
         <button class="btn icon white" data-act="dex" title="Chem Dex">${icon('book')}</button>
+        <button class="btn icon white" data-act="ach" title="Achievements">${icon('trophy')}</button>
         <button class="btn icon white" data-act="settings" title="Settings">${icon('gear')}</button>
         <button class="btn icon white" data-act="help" title="How to play">${icon('question')}</button>
       </div>
@@ -101,6 +103,7 @@ export function titleScreen(host: Host): void {
     if (act === 'shop') host.showShop();
     if (act === 'skills') host.showSkills();
     if (act === 'dex') host.showDex();
+    if (act === 'ach') host.showAchievements();
     if (act === 'settings') host.showSettings();
   });
 }
@@ -160,6 +163,7 @@ export function mapScreen(host: Host, chapter: number): void {
       <button class="btn white nav-btn" data-act="shop">${icon('cart')}Shop</button>
       <button class="btn white nav-btn" data-act="skills">${icon('brain')}Skills${p.skillPointsFree() > 0 ? `<span class="badge-dot">${p.skillPointsFree()}</span>` : ''}</button>
       <button class="btn white nav-btn" data-act="dex">${icon('book')}Chem Dex</button>
+      <button class="btn white nav-btn" data-act="ach">${icon('trophy')}Awards</button>
       <button class="btn white nav-btn" data-act="daily">${icon('gift')}Daily${host.dailyAvailable() ? '<span class="badge-dot">!</span>' : ''}</button>
       <button class="btn white nav-btn ${p.highestCleared() < 10 ? 'disabled' : ''}" data-act="endless">${icon('infinity')}Rush</button>
     </div>
@@ -182,6 +186,7 @@ export function mapScreen(host: Host, chapter: number): void {
     if (act === 'skills') host.showSkills();
     if (act === 'dex') host.showDex();
     if (act === 'daily') host.openDaily();
+    if (act === 'ach') host.showAchievements();
     if (act === 'endless') host.startEndless();
   });
 }

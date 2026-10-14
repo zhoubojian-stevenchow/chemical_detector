@@ -481,6 +481,15 @@ export class Character {
     }
   }
 
+  /** Free GPU memory: geometries are per-character; only the skin material is unique (others are cached/shared). */
+  dispose(): void {
+    this.root.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) m.geometry.dispose();
+    });
+    this.skinMat.dispose();
+  }
+
   setExpression(e: Expression): void {
     this.expr = e;
     const happy = e === 'happy';

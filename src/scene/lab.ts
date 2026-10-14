@@ -366,6 +366,7 @@ export class LabScene {
   removeClient(): void {
     if (!this.client) return;
     this.scene.remove(this.client.root);
+    this.client.dispose();
     this.client = null;
   }
 

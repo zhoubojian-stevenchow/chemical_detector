@@ -47,6 +47,11 @@ export class ShiftController {
   private newDex = 0;
   private tutorialStep = 0;
   private visHandler = () => this.onVisibility();
+  private resizeTimer = 0;
+  private resizeHandler = () => {
+    window.clearTimeout(this.resizeTimer);
+    this.resizeTimer = window.setTimeout(() => this.refreshTools(), 150);
+  };
   private keyHandler = (e: KeyboardEvent) => this.onKey(e);
 
   constructor(private app: App, private shift: Shift) {
@@ -93,6 +98,7 @@ export class ShiftController {
     audio.setIntensity(0);
     ads.gameplayStart();
     window.addEventListener('keydown', this.keyHandler);
+    window.addEventListener('resize', this.resizeHandler);
     document.addEventListener('visibilitychange', this.visHandler);
     this.last = performance.now();
     this.raf = requestAnimationFrame(() => this.tick());
@@ -123,6 +129,7 @@ export class ShiftController {
   private cleanup(): void {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('keydown', this.keyHandler);
+    window.removeEventListener('resize', this.resizeHandler);
     document.removeEventListener('visibilitychange', this.visHandler);
     this.tutor.clear();
     this.hud.destroy();
@@ -315,6 +322,7 @@ export class ShiftController {
     if (this.exit || this.failing) return; // shift ended / failed while the mini-game was on screen
     if (def.minigame !== 'instant') {
       s.registerQuality(q);
+      if (s.combo > (this.data.stats.bestCombo ?? 0)) this.data.stats.bestCombo = s.combo;
       if (q === 'perfect') {
         this.data.stats.perfects++;
         if (!auto) {

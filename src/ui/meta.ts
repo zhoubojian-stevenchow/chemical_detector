@@ -3,6 +3,7 @@ import { daysBetween, fmtNum, todayKey } from '../core/util';
 import { GAME } from '../config';
 import { COSMETICS, EQUIPMENT, FREE_COINS_AD, FREE_COINS_COOLDOWN_MS, ITEMS, PERKS } from '../data/shop';
 import { SKILLS, rankTitle, xpForRank } from '../data/skills';
+import { ACHIEVEMENTS, type Achievement } from '../data/achievements';
 import { SUBSTANCES } from '../data/substances';
 import { TOOLS, TOOL_MAP } from '../data/tools';
 import type { ToolId } from '../data/types';
@@ -342,4 +343,56 @@ export function dailyModal(host: Host, onDone: () => void): void {
     }
   });
   void $;
+}
+
+// ───────────────────────── achievements ─────────────────────────
+function rewardText(a: Achievement): string {
+  const parts: string[] = [];
+  if (a.reward.coins) parts.push(`${icon('coin').replace('<svg', '<svg style="width:18px;height:18px;vertical-align:-4px"')} ${fmtNum(a.reward.coins)}`);
+  if (a.reward.skill) parts.push(`+${a.reward.skill} skill point${a.reward.skill > 1 ? 's' : ''}`);
+  return parts.join(' · ');
+}
+
+export function achievementsScreen(host: Host, back: () => void): void {
+  clearLayer(host);
+  const d = host.data;
+  const stars = host.progress.totalStars();
+  const rank = host.progress.rank();
+  const done = ACHIEVEMENTS.filter((a) => d.achievements[a.id]).length;
+  const el = h(`<div class="screen meta-screen">${topbar(host, 'Achievements', back)}
+    <div class="meta-body">
+      <div class="dex-progress">${done} / ${ACHIEVEMENTS.length} unlocked</div>
+      <div class="ach-grid">${ACHIEVEMENTS.map((a) => {
+        const got = !!d.achievements[a.id];
+        const [cur, goal] = a.progress(d, stars, rank);
+        const k = Math.min(1, cur / goal);
+        return `<div class="ach panel ${got ? 'got' : ''}"><div class="ach-ico">${icon(a.icon).replace(/#fff"/g, '#22223b"')}</div>
+          <div class="ach-body"><div class="ach-name">${esc(a.name)}${got ? ' ✓' : ''}</div><div class="ach-desc">${esc(a.desc)}</div>
+          ${got ? `<div class="ach-reward">${rewardText(a)}</div>` : `<div class="xpbar ach-bar"><div style="width:${k * 100}%"></div><span>${fmtNum(Math.min(cur, goal))} / ${fmtNum(goal)}</span></div><div class="ach-reward dim">Reward: ${rewardText(a)}</div>`}</div></div>`;
+      }).join('')}</div>
+    </div></div>`);
+  host.layer.appendChild(el);
+  onAct(el, (act) => act === 'back' && back());
+}
+
+/** Slide-down banners for freshly unlocked achievements (bursts collapse into one summary). */
+export function achievementBanners(host: Host, list: Achievement[], delay = 600): void {
+  const shown = list.length > 3 ? list.slice(0, 2) : list;
+  const show = (inner: string, at: number) =>
+    setTimeout(() => {
+      audio.play('levelup');
+      const el = h(`<div class="ach-banner panel">${icon('trophy')}<div>${inner}</div></div>`);
+      host.layer.appendChild(el);
+      setTimeout(() => el.classList.add('out'), 3200);
+      setTimeout(() => el.remove(), 3700);
+    }, at);
+  shown.forEach((a, i) =>
+    show(`<div class="ach-banner-title">Achievement unlocked!</div><div class="ach-name">${esc(a.name)}</div><div class="ach-reward">${rewardText(a)}</div>`, delay + i * 3900),
+  );
+  const rest = list.slice(shown.length);
+  if (rest.length) {
+    const sum = rest.reduce((t, a) => ({ coins: t.coins + (a.reward.coins ?? 0), skill: t.skill + (a.reward.skill ?? 0) }), { coins: 0, skill: 0 });
+    const reward = rewardText({ reward: sum } as Achievement);
+    show(`<div class="ach-banner-title">+${rest.length} more achievements!</div><div class="ach-name">Check the Awards screen</div><div class="ach-reward">${reward}</div>`, delay + shown.length * 3900);
+  }
 }

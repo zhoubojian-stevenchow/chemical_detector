@@ -74,14 +74,14 @@ async function boot(): Promise<void> {
   lab.snap('menu');
 
   // audio can only start after a user gesture
+  // (iOS Safari only counts touchend/click as a user activation, so listen to all of them)
+  const unlockEvents = ['pointerdown', 'touchend', 'click', 'keydown'];
   const unlock = () => {
     audio.unlock();
     app.applySettings();
-    window.removeEventListener('pointerdown', unlock);
-    window.removeEventListener('keydown', unlock);
+    if (audio.ready) unlockEvents.forEach((ev) => window.removeEventListener(ev, unlock, true));
   };
-  window.addEventListener('pointerdown', unlock);
-  window.addEventListener('keydown', unlock);
+  unlockEvents.forEach((ev) => window.addEventListener(ev, unlock, true));
 
   document.addEventListener('visibilitychange', () => audio.setHidden(document.hidden));
   window.addEventListener('beforeunload', () => save.flush());
