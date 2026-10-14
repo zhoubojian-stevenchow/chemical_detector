@@ -147,14 +147,23 @@ export class SaveManager {
   }
 }
 
+/** Same JSON "shape" (array / object / null / primitive type)? */
+function sameKind(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b);
+  return typeof a === typeof b && (a === null) === (b === null);
+}
+
 function merge<T>(base: T, over: Partial<T>): T {
   const out: any = Array.isArray(base) ? [...(base as any)] : { ...base };
   for (const k in over) {
     const v = (over as any)[k];
     const b = (base as any)[k];
+    if (v === undefined) continue;
+    // a corrupt or foreign value (null where an object belongs, wrong type…) keeps the default
+    if (b !== undefined && b !== null && !sameKind(v, b)) continue;
     if (v && typeof v === 'object' && !Array.isArray(v) && b && typeof b === 'object' && !Array.isArray(b)) {
       out[k] = merge(b, v);
-    } else if (v !== undefined) {
+    } else {
       out[k] = v;
     }
   }

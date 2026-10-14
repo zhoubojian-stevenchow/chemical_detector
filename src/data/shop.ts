@@ -56,16 +56,18 @@ export const PERKS: Perk[] = [
 export interface Item {
   id: 'espresso' | 'hint' | 'extinguisher' | 'firstaid';
   name: string;
+  /** label under the HUD button */
+  short: string;
   desc: string;
   price: number;
   color: string;
 }
 
 export const ITEMS: Item[] = [
-  { id: 'espresso', name: 'Espresso Shot', desc: '+20 seconds on the shift clock.', price: 60, color: '#8b5a2b' },
-  { id: 'hint', name: 'Lab Notes', desc: 'Rules out one wrong answer and highlights the best test.', price: 90, color: '#ffd23f' },
-  { id: 'extinguisher', name: 'Extinguisher', desc: 'Automatically cancels the next accident.', price: 75, color: '#ff4d4d' },
-  { id: 'firstaid', name: 'First-Aid Kit', desc: 'Restores one heart.', price: 110, color: '#2ed573' },
+  { id: 'espresso', name: 'Espresso Shot', short: 'Espresso', desc: '+20 seconds on the shift clock.', price: 60, color: '#8b5a2b' },
+  { id: 'hint', name: 'Lab Notes', short: 'Hint', desc: 'Rules out one wrong answer and highlights the best test.', price: 90, color: '#ffd23f' },
+  { id: 'extinguisher', name: 'Extinguisher', short: 'Extinguish', desc: 'Automatically cancels the next accident.', price: 75, color: '#ff4d4d' },
+  { id: 'firstaid', name: 'First-Aid Kit', short: 'First-Aid', desc: 'Restores one heart.', price: 110, color: '#2ed573' },
 ];
 
 export interface Cosmetic {

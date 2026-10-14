@@ -24,6 +24,8 @@ export function onAct(root: HTMLElement, handler: (act: string, el: HTMLElement,
     if (!el || !root.contains(el)) return;
     if (el.classList.contains('disabled') || (el as HTMLButtonElement).disabled) {
       audio.play('error');
+      // locked features explain how to unlock them
+      if (el.dataset.locked) toast((el.closest('#ui') as HTMLElement | null) ?? root, el.dataset.locked);
       return;
     }
     if (el.classList.contains('btn') || el.classList.contains('tab') || el.classList.contains('chapter-tab')) audio.play('click');

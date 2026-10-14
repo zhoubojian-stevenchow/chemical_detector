@@ -135,7 +135,8 @@ export class App implements Host {
     }, 1400);
   }
 
-  showMap(chapter?: number): void {
+  /** @param quiet don't pop the daily-bonus prompt (another modal is about to open) */
+  showMap(chapter?: number, quiet = false): void {
     this.returnTo = 'map';
     this.inShift = false;
     this.updateInsets();
@@ -155,7 +156,7 @@ export class App implements Host {
       this.pendingChapter = null;
       void chapterUnlockedModal(this, ch).then(() => mapScreen(this, ch));
       this.chapter = ch;
-    } else if (!this.dailyPrompted && this.dailyAvailable() && this.progress.highestCleared() >= 1) {
+    } else if (!quiet && !this.dailyPrompted && this.dailyAvailable() && this.progress.highestCleared() >= 1) {
       this.dailyPrompted = true;
       setTimeout(() => this.openDaily(), 500);
     }
@@ -287,6 +288,7 @@ export class App implements Host {
   }
 
   private async playShift(mode: Mode, levelId: number): Promise<void> {
+    const origin = this.returnTo; // where Rush Hour / Daily Case were started from
     while (true) {
       clearLayer(this);
       this.inShift = true;
@@ -307,6 +309,7 @@ export class App implements Host {
         if (exit.kind === 'failed') this.recordDex(exit.newDex);
         await this.maybeInterstitial(levelId);
         if (mode === 'campaign') this.showMap(Math.ceil(levelId / 10));
+        else if (exit.kind === 'failed' || origin === 'map') this.showMap(); // the fail screen's button says "Map"
         else this.showTitle();
         return;
       }
@@ -394,12 +397,12 @@ export class App implements Host {
           this.showMap(ch);
           return;
         }
-        this.showMap(ch);
+        this.showMap(ch, true);
         levelIntro(this, levelId);
         return;
       }
-      if (mode === 'campaign') this.showMap(Math.ceil(levelId / 10));
-      else this.showTitle();
+      // the results screen's button says "Map" in every mode
+      this.showMap(mode === 'campaign' ? Math.ceil(levelId / 10) : undefined);
       return;
     }
   }

@@ -198,12 +198,16 @@ export class ShiftController {
     this.machines.clear();
     this.lab.resetMachines();
     await this.lab.focus('client', 0.6);
+    if (this.exit) return;
     await this.lab.clientEnter(c.client);
+    if (this.exit) return;
     this.lab.clientTalk(2.5);
     const greeting = pick(c.client.hello);
     await this.hud.dialog(c.client, `${greeting} ${c.template.text}`, { label: c.template.label, next: 'Tap to start testing ▸' });
+    if (this.exit) return;
     void this.lab.focus('overview', 0.7);
     await this.lab.showSample(c.answer, c.template.label ?? '???');
+    if (this.exit) return;
     this.hud.setCandidates(c.lineup, c.eliminated, (id) => !!this.data.dex[id]);
     this.hud.setEvidence([]);
     this.hud.showRequest(c.client, c.template.text);
@@ -253,6 +257,7 @@ export class ShiftController {
     return ITEMS.filter((it) => it.id !== 'extinguisher').map((it) => ({
       id: it.id,
       name: it.name,
+      short: it.short,
       count: this.data.items[it.id] ?? 0,
       ad: this.app.rewardedAvailable && !this.adItemUsed,
     }));
@@ -348,10 +353,11 @@ export class ShiftController {
     else toast(this.app.layer, 'Botched! No reading — you can try that test again.');
     if (s.runCost(id)) this.hud.setCoins(s.coins - s.spent);
     await this.lab.focus('overview', 0.55);
+    if (this.exit) return;
     this.busy = false;
     this.hud.setBusy(false);
     this.refreshTools();
-    await this.tutorialAfterTest();
+    if (result) await this.tutorialAfterTest(); // a botched test ruled nothing out: explain after the next one
   }
 
   private difficulty(): number {
@@ -512,6 +518,7 @@ export class ShiftController {
     }
     this.app.persist();
     await this.hud.dialog(c.client, line, { next: 'Next ▸' });
+    if (this.exit) return;
     void this.lab.clientLeave();
     await this.lab.tossSample();
     this.lab.removeClient();
@@ -679,7 +686,7 @@ export class ShiftController {
     if (this.paused || this.failing || this.exit) return;
     this.paused = true;
     setMinigamePaused(true);
-    this.tutor.clear();
+    this.tutor.setHidden(true);
     ads.gameplayStop();
     pauseMenu(this.app, {
       resume: () => this.resume(),
@@ -703,6 +710,7 @@ export class ShiftController {
   private resume(): void {
     this.paused = false;
     setMinigamePaused(false);
+    this.tutor.setHidden(false);
     this.last = performance.now();
     ads.gameplayStart();
   }
@@ -710,6 +718,8 @@ export class ShiftController {
   /** Close dialogs/minigames so an awaiting flow can't keep the shift alive. */
   private closeTransient(): void {
     this.hud.closeDialog();
+    this.tutor.setHidden(false);
+    this.tutor.clear();
     this.app.layer.querySelectorAll('.mg, .modal').forEach((e) => e.remove());
   }
 
@@ -752,6 +762,7 @@ export class ShiftController {
     if (id === 1 && !this.data.flags.tut1 && this.shift.index === 0) {
       this.running = false;
       await this.tutor.show($(this.hud.root, '.cands'), 'These are the SUSPECTS. The sample is one of them — your job is to find out which!', 'Got it');
+      if (this.exit) return;
       await this.tutor.show(this.hud.toolEl('ph'), 'Run a test! Tap the pH Strip to check how acidic the sample is.');
       this.tutorialStep = 1;
       this.running = true;
@@ -773,7 +784,9 @@ export class ShiftController {
     this.tutorialStep = 2;
     this.running = false;
     await wait(600);
+    if (this.exit) return;
     await this.tutor.show($(this.hud.root, '.cands'), 'Look! Every suspect that does not match the reading got RULED OUT.', 'Cool');
+    if (this.exit) return;
     const rem = this.shift.remaining();
     if (rem.length === 1) {
       const el = this.hud.root.querySelector(`.cand[data-id="${rem[0].id}"]`) as HTMLElement | null;

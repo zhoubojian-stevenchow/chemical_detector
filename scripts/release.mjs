@@ -36,7 +36,7 @@ for (const t of targets) {
   const outDir = join(root, `dist-${t}`);
   console.log(`\n▶ building ${t}`);
   rmSync(outDir, { recursive: true, force: true });
-  execSync(`npx vite build --mode ${t} --outDir ${outDir}`, { cwd: root, stdio: 'inherit' });
+  execSync(`npx vite build --mode ${t} --outDir dist-${t}`, { cwd: root, stdio: 'inherit' }); // relative: safe for paths with spaces
   const files = {};
   for (const f of walk(outDir)) files[relative(outDir, f).split('\\').join('/')] = readFileSync(f);
   const zip = zipSync(files, { level: 9 });

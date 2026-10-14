@@ -538,7 +538,7 @@ export class Character {
     // blink
     this.blinkT -= dt;
     let blink = 1;
-    if (this.blinkT < 0.12) blink = Math.max(0.1, Math.abs(this.blinkT - 0.06) / 0.06);
+    if (this.blinkT < 0.12) blink = Math.min(1, Math.max(0.1, Math.abs(this.blinkT - 0.06) / 0.06));
     if (this.blinkT < 0) this.blinkT = 2 + Math.random() * 3;
     for (const e of this.eyes) e.scale.y = blink;
     // pupils look at camera

@@ -7,6 +7,9 @@ export class Tutor {
   private box: HTMLElement | null = null;
   private target: HTMLElement | null = null;
   private raf = 0;
+  /** resolver of the step waiting for its button */
+  private pending: (() => void) | null = null;
+  private hidden = false;
 
   constructor(private layer: HTMLElement) {}
 
@@ -20,7 +23,8 @@ export class Tutor {
     }
     this.box = h(`<div class="tut-box panel"><div class="tut-who">GERALD (Senior Lab Rat)</div>${esc(text)}${next ? `<div><button class="btn small yellow">${esc(next)}</button></div>` : ''}</div>`);
     this.layer.appendChild(this.box);
-    audio.play('squeak');
+    this.setHidden(this.hidden);
+    if (!this.hidden) audio.play('squeak');
     this.place();
     const loop = () => {
       this.place();
@@ -29,10 +33,10 @@ export class Tutor {
     this.raf = requestAnimationFrame(loop);
     if (!next) return Promise.resolve();
     return new Promise((resolve) => {
+      this.pending = resolve;
       this.box!.querySelector('button')!.addEventListener('click', () => {
         audio.play('click');
         this.clear();
-        resolve();
       });
     });
   }
@@ -71,6 +75,14 @@ export class Tutor {
     }
   }
 
+  /** Hide the current step without ending it (e.g. while the game is paused). */
+  setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+    this.ring?.classList.toggle('tut-hidden', hidden);
+    this.box?.classList.toggle('tut-hidden', hidden);
+  }
+
+  /** Remove the current step; a step waiting for its button counts as dismissed. */
   clear(): void {
     cancelAnimationFrame(this.raf);
     this.ring?.remove();
@@ -78,5 +90,8 @@ export class Tutor {
     this.ring = null;
     this.box = null;
     this.target = null;
+    const done = this.pending;
+    this.pending = null;
+    done?.();
   }
 }

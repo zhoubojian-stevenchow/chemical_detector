@@ -50,7 +50,7 @@ export function howToPlay(host: Host): void {
     host.layer,
     `<button class="btn icon small white close-x" data-act="close">${icon('close').replace(/#fff/g, '#22223b')}</button>
     <h2 class="modal-title">How to play</h2>
-    <div class="objectives">${steps.map(([ic, t]) => `<div class="objective">${ic === 'flame' ? toolIcon('flame') : icon(ic).replace(/#fff"/g, '#22223b"')}<span>${t}</span></div>`).join('')}</div>
+    <div class="objectives">${steps.map(([ic, t]) => `<div class="objective">${ic === 'flame' ? toolIcon('flame') : ic === 'question' ? icon(ic) : icon(ic).replace(/#fff"/g, '#22223b"')}<span>${t}</span></div>`).join('')}</div>
     <p class="modal-sub" style="font-size:14px">Keyboard: <b>1–9</b> tools · <b>Space</b> mini-games · <b>Esc</b> pause</p>
     <div class="modal-actions"><button class="btn yellow big" data-act="close">Got it!</button></div>`,
   );
@@ -58,7 +58,8 @@ export function howToPlay(host: Host): void {
 }
 
 export function clearLayer(host: Host): void {
-  host.layer.innerHTML = '';
+  // keep transient notices (toasts, achievement banners) alive across screen changes
+  for (const el of [...host.layer.children]) if (!el.matches('.toast, .ach-banner')) el.remove();
 }
 
 function pill(iconName: string, value: string, cls = ''): string {
@@ -80,8 +81,8 @@ export function titleScreen(host: Host): void {
     <div class="title-buttons">
       <button class="btn big yellow pulse" data-act="play">${icon('play').replace('#fff', '#22223b')} ${p.highestCleared() > 0 ? 'CONTINUE' : 'PLAY'}</button>
       <div class="title-row">
-        <button class="btn purple ${endlessLocked ? 'disabled' : ''}" data-act="endless">${icon(endlessLocked ? 'lock' : 'infinity')} Rush Hour</button>
-        <button class="btn blue ${dailyLocked ? 'disabled' : ''}" data-act="dailycase">${icon(dailyLocked ? 'lock' : 'calendar')} Daily Case${host.dailyCaseAvailable() && !dailyLocked ? ' !' : ''}</button>
+        <button class="btn purple ${endlessLocked ? 'disabled' : ''}" data-act="endless"${endlessLocked ? ' data-locked="Clear level 10 to unlock Rush Hour!"' : ''}>${icon(endlessLocked ? 'lock' : 'infinity')} Rush Hour</button>
+        <button class="btn blue ${dailyLocked ? 'disabled' : ''}" data-act="dailycase"${dailyLocked ? ' data-locked="Clear level 5 to unlock the Daily Case!"' : ''}>${icon(dailyLocked ? 'lock' : 'calendar')} Daily Case${host.dailyCaseAvailable() && !dailyLocked ? ' !' : ''}</button>
       </div>
       <div class="title-row">
         <button class="btn icon white" data-act="shop" title="Shop">${icon('cart')}</button>
@@ -98,8 +99,8 @@ export function titleScreen(host: Host): void {
   onAct(el, (act) => {
     if (act === 'play') void host.playPressed();
     if (act === 'help') howToPlay(host);
-    if (act === 'endless') endlessLocked ? lockedToast(host, 'Clear level 10 to unlock Rush Hour!') : host.startEndless();
-    if (act === 'dailycase') dailyLocked ? lockedToast(host, 'Clear level 5 to unlock the Daily Case!') : host.startDailyCase();
+    if (act === 'endless') host.startEndless();
+    if (act === 'dailycase') host.startDailyCase();
     if (act === 'shop') host.showShop();
     if (act === 'skills') host.showSkills();
     if (act === 'dex') host.showDex();
@@ -165,7 +166,7 @@ export function mapScreen(host: Host, chapter: number): void {
       <button class="btn white nav-btn" data-act="dex">${icon('book')}Chem Dex</button>
       <button class="btn white nav-btn" data-act="ach">${icon('trophy')}Awards</button>
       <button class="btn white nav-btn" data-act="daily">${icon('gift')}Daily${host.dailyAvailable() ? '<span class="badge-dot">!</span>' : ''}</button>
-      <button class="btn white nav-btn ${p.highestCleared() < 10 ? 'disabled' : ''}" data-act="endless">${icon('infinity')}Rush</button>
+      <button class="btn white nav-btn ${p.highestCleared() < 10 ? 'disabled' : ''}" data-act="endless"${p.highestCleared() < 10 ? ' data-locked="Clear level 10 to unlock Rush Hour!"' : ''}>${icon('infinity')}Rush</button>
     </div>
   </div>`);
   host.layer.appendChild(el);
@@ -211,7 +212,7 @@ export function levelIntro(host: Host, id: number): void {
     ${mods.length ? `<div class="mods">${mods.map((x) => `<span class="chip mod-chip" style="background:${x.color}">${esc(x.name)} · ${esc(x.desc)}</span>`).join('')}</div>` : ''}
     <div class="clients-row">${clients.map((c) => `<div style="display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:600;width:76px;text-align:center">${avatarHtml(c)}${esc(c.name)}</div>`).join('')}</div>
     <div class="objectives">
-      <div class="objective">${icon(stars[0] ? 'star' : 'starEmpty')} Solve all ${l.cases.length} case${l.cases.length > 1 ? 's' : ''} before the clock runs out</div>
+      <div class="objective">${icon(stars[0] ? 'star' : 'starEmpty')} ${l.cases.length > 1 ? `Solve all ${l.cases.length} cases` : 'Solve the case'} before the clock runs out</div>
       <div class="objective">${icon(stars[1] ? 'star' : 'starEmpty')} Flawless: no wrong reports, no accidents</div>
       <div class="objective">${icon(stars[2] ? 'star' : 'starEmpty')} Speedy: finish with ${Math.round(parFraction(id) * 100)}% of the clock left</div>
     </div>

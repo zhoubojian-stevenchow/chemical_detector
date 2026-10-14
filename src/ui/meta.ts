@@ -26,7 +26,7 @@ function refreshCoins(host: Host, root: HTMLElement): void {
 function spend(host: Host, price: number): boolean {
   if (host.data.coins < price) {
     audio.play('error');
-    toast(host.layer, 'Not enough coins! Play shifts or watch an ad for free coins.');
+    toast(host.layer, host.rewardedAvailable ? 'Not enough coins! Play shifts or watch an ad for free coins.' : 'Not enough coins! Play more shifts to earn some.');
     return false;
   }
   host.data.coins -= price;

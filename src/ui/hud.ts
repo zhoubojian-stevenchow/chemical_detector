@@ -20,6 +20,7 @@ export interface ToolView {
 export interface ItemView {
   id: string;
   name: string;
+  short: string;
   count: number;
   ad: boolean;
 }
@@ -44,6 +45,7 @@ export class Hud {
   private parent: HTMLElement;
   private cb: HudCallbacks;
   private dialogEl: HTMLElement | null = null;
+  private dialogCancel: (() => void) | null = null;
   private readingTimer = 0;
   private bubbleEl: HTMLElement | null = null;
   private bubbleTimer = 0;
@@ -101,7 +103,7 @@ export class Hud {
 
   destroy(): void {
     this.root.remove();
-    this.dialogEl?.remove();
+    this.closeDialog();
     this.bubbleEl?.remove();
   }
 
@@ -166,31 +168,43 @@ export class Hud {
         else setTimeout(step, 1000 / (client.voice.speed * 5));
       };
       step();
+      // settles the promise however the dialog goes away, so an awaiting flow never hangs
+      const close = () => {
+        el.removeEventListener('click', onTap);
+        window.removeEventListener('keydown', onKey);
+        el.remove();
+        if (this.dialogEl === el) {
+          this.dialogEl = null;
+          this.dialogCancel = null;
+        }
+        resolve();
+      };
       const onTap = () => {
         if (!done) {
           finish();
           return;
         }
         audio.play('click');
-        el.removeEventListener('click', onTap);
-        window.removeEventListener('keydown', onKey);
-        el.remove();
-        if (this.dialogEl === el) this.dialogEl = null;
-        resolve();
+        close();
       };
       const onKey = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.code === 'Enter') {
-          e.preventDefault();
-          onTap();
-        }
+        if (e.code !== 'Space' && e.code !== 'Enter') return;
+        if (this.parent.querySelector('.modal')) return; // e.g. the pause menu is open
+        e.preventDefault();
+        onTap();
       };
       el.addEventListener('click', onTap);
       window.addEventListener('keydown', onKey);
+      this.dialogCancel = close;
     });
   }
 
+  /** Remove the dialog (if any) and release whoever is awaiting it. */
   closeDialog(): void {
-    this.dialogEl?.remove();
+    const cancel = this.dialogCancel;
+    this.dialogCancel = null;
+    if (cancel) cancel();
+    else this.dialogEl?.remove();
     this.dialogEl = null;
   }
 
@@ -320,7 +334,7 @@ export class Hud {
     }
     itemsEl.style.display = $(this.root, '.tray').style.display;
     itemsEl.innerHTML = items
-      .map((it) => `<button class="item-btn ${it.count <= 0 && !it.ad ? 'empty' : ''}" data-act="item" data-id="${it.id}" title="${esc(it.name)}">${icon(it.id)}<span>${esc(it.name.split(' ')[0])}</span>${it.count > 0 ? `<span class="count">${it.count}</span>` : it.ad ? `<span class="count ad">AD</span>` : ''}</button>`)
+      .map((it) => `<button class="item-btn ${it.count <= 0 && !it.ad ? 'empty' : ''}" data-act="item" data-id="${it.id}" title="${esc(it.name)}">${icon(it.id)}<span>${esc(it.short)}</span>${it.count > 0 ? `<span class="count">${it.count}</span>` : it.ad ? `<span class="count ad">AD</span>` : ''}</button>`)
       .join('');
   }
 
