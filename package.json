@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build --mode standalone",
     "build:standalone": "vite build --mode standalone",
+    "build:single": "tsc --noEmit && vite build --mode standalone --outDir dist-standalone && node scripts/singlefile.mjs",
     "build:poki": "vite build --mode poki --outDir dist-poki",
     "build:crazygames": "vite build --mode crazygames --outDir dist-crazygames",
     "build:gamedistribution": "vite build --mode gamedistribution --outDir dist-gamedistribution",
